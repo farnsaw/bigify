@@ -49,9 +49,10 @@ sub tini
 
 sub default
 {
-#  checkin();
-#showCheckins();
-showDistinctCheckins();
+#   checkin();
+#   showCheckins();
+#   showDistinctCheckins();
+    listBigs();
 }
 
 sub checkin
@@ -120,15 +121,15 @@ sub createCheckinTable
 sub createBigifyTable
 {
   my $stmt = qq|CREATE TABLE bigify (
-	id INT NOT NULL AUTO_INCREMENT, 
-	version float,
-	name varchar(1024),
-	description varchar(1024),
-	code varchar(1024),
-	url varchar(1024),
-	state varchar(1024),
-	date_created date,
-	date_modified date,
+    id INT NOT NULL AUTO_INCREMENT, 
+    version float,
+    name varchar(1024),
+    description varchar(1024),
+    code varchar(1024),
+    url varchar(1024),
+    state varchar(1024),
+    date_created date,
+    date_modified date,
     PRIMARY KEY ( id )
 	);
 	|;
@@ -145,6 +146,54 @@ sub createBigifyTable
   return();
 }
 
+sub listBigs
+{
+  my $reportingIP = $ENV{REMOTE_ADDR};
+  my $actualIP = $cgi->param('actualIP');
+  my $uname = $cgi->param('uname');
+  my $uptime = $cgi->param('uptime');
+  my $serverURL= $cgi->param('serverURL');
+
+my $output  = "<br>\n";
+   $output .= "<br><hr>\n";
+
+  my $stmt = qq|select id, version, name, description, code, url, state, date_created, date_modified from bigify;|;
+  my $rv = 0;
+
+  $sth = $dbh->prepare($stmt);
+  $rv = $sth->execute();
+  logwrite('listBigs : rv', $rv);
+  logwrite('listBigs : dbh->errstr', $dbh->errstr);
+
+  my $rowcount = 1;
+
+  my $output = qq|<div class="piCheckins"><table>\n|;
+	$output .= "<tr><th>id</th><th>version</th><th>name</th><th>Description</th><th>Code</th><th>URL</th><th>state</th><th>date_created</th><th>date_modified</th></tr>\n";
+  while ($row = $sth2->fetchrow_hashref())
+  {
+	$output .= "<tr>";
+	$output .= "<td>" . $row->{'id'} . "</td>";
+	$output .= "<td>" . $row->{'version'} . "</td>";
+	$output .= "<td>" . $row->{'name'} . "</td>";
+	$output .= "<td>" . $row->{'description'} . "</td>";
+	$output .= "<td>" . $row->{'code'} . "</td>";
+	$output .= "<td>" . $row->{'url'} . "</td>";
+	$output .= "<td>" . $row->{'state'} . "</td>";
+	$output .= "<td>" . $row->{'date_created'} . "</td>";
+	$output .= "<td>" . $row->{'date_modified'} . "</td>";
+	$output .= "</tr>\n";
+	last if ($rowcount++ >= $maxrows);
+  }
+  $timeUpdated = scalar localtime();
+  $output .= qq|<tr><td colspan="9">$timeUpdated</td></tr>|;
+  $output .= "</table>\n";
+  print "<hr>$output<br>\n";
+  $sth2->finish();
+  return();
+
+  $sth->finish();
+  return();
+}
 
 sub showCheckins
 {
